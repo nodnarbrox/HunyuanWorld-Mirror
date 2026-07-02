@@ -5,8 +5,17 @@ import torch.nn as nn
 from torch import Tensor
 from einops import rearrange
 
-from gsplat.rendering import rasterization
-from gsplat.strategy import DefaultStrategy
+# gsplat requires an NVIDIA GPU with compute capability >= 7.0. On older GPUs
+# (e.g. Maxwell/Pascal) inference still works: splats are predicted and exported
+# without rasterization, which is only needed to render novel-view videos.
+try:
+    from gsplat.rendering import rasterization
+    from gsplat.strategy import DefaultStrategy
+    GSPLAT_AVAILABLE = True
+except ImportError:
+    rasterization = None
+    DefaultStrategy = None
+    GSPLAT_AVAILABLE = False
 
 from src.models.utils.frustum import calculate_unprojected_mask
 from src.models.utils.geometry import depth_to_world_coords_points
@@ -38,6 +47,12 @@ class Rasterizer:
         height: int,
         **kwargs,
     ) -> Tuple[Tensor, Tensor, Dict]:
+        if not GSPLAT_AVAILABLE:
+            raise RuntimeError(
+                "gsplat is not installed (requires GPU compute capability >= 7.0). "
+                "Splat prediction/export works without it; only novel-view "
+                "rasterization is unavailable."
+            )
         render_colors, render_alphas, _ = rasterization(
             means=means,
             quats=quats,

@@ -1,0 +1,26 @@
+# Inference-only requirements for legacy NVIDIA GPUs (Maxwell/Pascal, sm_52+).
+# Tested target: Tesla M40 (compute 5.2, 11.5GB), driver 535, torch 2.4.1+cu121.
+#
+# Install torch FIRST, pinned to the last wheel line that ships sm_52 kernels:
+#   pip install torch==2.4.1 --index-url https://download.pytorch.org/whl/cu121
+#
+# gsplat is intentionally OMITTED: it needs compute capability >= 7.0.
+# Without it you still get: point clouds, depth maps, normals, camera poses,
+# COLMAP sparse, and the 3D Gaussians PLY — only rendered.mp4 is skipped.
+
+numpy<2.0.0
+opencv-python
+pillow
+pillow_heif
+einops
+trimesh
+roma
+scipy
+tqdm
+jaxtyping
+plyfile
+matplotlib
+huggingface-hub>=0.22
+onnxruntime
+pycolmap==3.10.0
+moviepy==1.0.3

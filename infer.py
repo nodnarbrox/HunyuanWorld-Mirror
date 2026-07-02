@@ -18,7 +18,12 @@ from src.models.utils.geometry import create_pixel_coordinate_grid
 
 from src.utils.save_utils import save_depth_png, save_depth_npy, save_normal_png
 from src.utils.save_utils import save_scene_ply, save_gs_ply, save_points_ply
-from src.utils.render_utils import render_interpolated_video
+# Rendering the interpolated video needs gsplat (GPU compute capability >= 7.0).
+# On older GPUs everything else (splats, PLY, depth, normals, cameras) still works.
+try:
+    from src.utils.render_utils import render_interpolated_video
+except ImportError:
+    render_interpolated_video = None
 
 from src.utils.build_pycolmap_recon import build_pycolmap_reconstruction
 from src.models.utils.camera_utils import vector_to_camera_matrices
@@ -361,7 +366,9 @@ def main():
 
         # Render video using the same filtered splats from predictions
         num_views = S
-        if args.save_rendered:
+        if args.save_rendered and render_interpolated_video is None:
+            print("⚠️  gsplat unavailable on this GPU — skipping rendered.mp4 (gaussians.ply still saved)")
+        elif args.save_rendered:
             e4x4 = predictions['camera_poses']
             k3x3 = predictions['camera_intrs']
             render_interpolated_video(model.gs_renderer, predictions["splats"], e4x4, k3x3, (H, W), outdir / "rendered", interp_per_pair=15, loop_reverse=num_views==1)

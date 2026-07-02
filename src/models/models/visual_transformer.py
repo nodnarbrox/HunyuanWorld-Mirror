@@ -17,6 +17,14 @@ _RESNET_MEAN = [0.485, 0.456, 0.406]
 _RESNET_STD = [0.229, 0.224, 0.225]
 
 
+def _amp_autocast():
+    """bf16 autocast where supported; full-precision fallback on older GPUs
+    (e.g. Maxwell sm_52, which has neither bf16 nor usable fp16 GEMMs)."""
+    if torch.cuda.is_available() and torch.cuda.is_bf16_supported():
+        return torch.amp.autocast('cuda', dtype=torch.bfloat16)
+    return torch.amp.autocast('cuda', enabled=False)
+
+
 class VisualGeometryTransformer(nn.Module):
     """
     The VisualGeometryTransformer applies alternating-attention over input frames,
@@ -272,7 +280,7 @@ class VisualGeometryTransformer(nn.Module):
         if ch != 3:
             raise ValueError(f"Expected 3 input channels, got {ch}")
 
-        with torch.amp.autocast('cuda', dtype=torch.bfloat16):           
+        with _amp_autocast():           
             images = (images - self._resnet_mean) / self._resnet_std
             images = images.reshape(b * seq_len, ch, h, w)
             patch_tokens = self.patch_embed(images)
@@ -306,7 +314,7 @@ class VisualGeometryTransformer(nn.Module):
                 pos_emb = torch.cat([special_pos, pos_emb], dim=1)
 
         # Forward through attention blocks
-        with torch.amp.autocast('cuda', dtype=torch.bfloat16):            
+        with _amp_autocast():            
             outputs = []
             global_tokens = None
             for idx in range(self.depth):

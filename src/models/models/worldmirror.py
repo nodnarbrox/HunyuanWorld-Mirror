@@ -253,10 +253,7 @@ class WorldMirror(nn.Module, PyTorchModelHubMixin):
             depth_h, depth_w = views['depthmap'].shape[-2:]
             depths = views['depthmap']
             if depth_h != h or depth_w != w:  # Check if depth dimensions match target resolution
-                try:
-                    depths = F.interpolate(depths, size=(h, w), mode='bilinear', align_corners=False)
-                except:
-                    import pdb; pdb.set_trace()
+                depths = F.interpolate(depths, size=(h, w), mode='bilinear', align_corners=False)
             depths = normalize_depth(depths)  # Shape: [B, S, H, W]
             
         # Extract ray directions
@@ -296,7 +293,7 @@ class WorldMirror(nn.Module, PyTorchModelHubMixin):
         use_cond = sum(cond_flags) > 0
         
         # Extract context priors and process features based on context views
-        with torch.amp.autocast('cuda', enabled=True):
+        with torch.amp.autocast('cuda', enabled=torch.cuda.is_available() and torch.cuda.is_bf16_supported()):
             if use_cond:
                 priors = self.extract_priors(views)
                 context_priors = (prior[:, :context_nums] if prior is not None else None for prior in priors)
