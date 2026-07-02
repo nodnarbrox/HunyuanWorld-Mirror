@@ -293,7 +293,7 @@ class WorldMirror(nn.Module, PyTorchModelHubMixin):
         use_cond = sum(cond_flags) > 0
         
         # Extract context priors and process features based on context views
-        with torch.amp.autocast('cuda', enabled=torch.cuda.is_available() and torch.cuda.is_bf16_supported()):
+        with torch.amp.autocast('cuda', enabled=torch.cuda.is_available() and torch.cuda.get_device_capability()[0] >= 8):
             if use_cond:
                 priors = self.extract_priors(views)
                 context_priors = (prior[:, :context_nums] if prior is not None else None for prior in priors)

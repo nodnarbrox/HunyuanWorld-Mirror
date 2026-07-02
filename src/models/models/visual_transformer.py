@@ -18,9 +18,11 @@ _RESNET_STD = [0.229, 0.224, 0.225]
 
 
 def _amp_autocast():
-    """bf16 autocast where supported; full-precision fallback on older GPUs
-    (e.g. Maxwell sm_52, which has neither bf16 nor usable fp16 GEMMs)."""
-    if torch.cuda.is_available() and torch.cuda.is_bf16_supported():
+    """bf16 autocast on Ampere+ only. torch.cuda.is_bf16_supported() is NOT a
+    safe gate: on Maxwell it returns True (emulated elementwise bf16 works) but
+    cuBLAS batched bf16 GEMMs -- which SDPA uses -- raise
+    CUBLAS_STATUS_NOT_SUPPORTED. Gate on compute capability instead."""
+    if torch.cuda.is_available() and torch.cuda.get_device_capability()[0] >= 8:
         return torch.amp.autocast('cuda', dtype=torch.bfloat16)
     return torch.amp.autocast('cuda', enabled=False)
 

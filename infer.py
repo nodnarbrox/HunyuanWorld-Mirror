@@ -215,7 +215,7 @@ def main():
     # 4) Inference
     print("\n🚀 Starting inference pipeline...")
     start_time = time.time()
-    use_amp = torch.cuda.is_available() and torch.cuda.is_bf16_supported()
+    use_amp = torch.cuda.is_available() and torch.cuda.get_device_capability()[0] >= 8
     if use_amp:
         amp_dtype = torch.bfloat16
     else:
