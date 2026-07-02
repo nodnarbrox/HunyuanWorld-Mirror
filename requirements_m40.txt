@@ -21,6 +21,7 @@ jaxtyping
 plyfile
 matplotlib
 huggingface-hub>=0.22
+safetensors
 onnxruntime
 pycolmap==3.10.0
 moviepy==1.0.3
